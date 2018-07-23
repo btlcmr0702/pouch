@@ -177,6 +177,54 @@ func TestListVolumes(t *testing.T) {
 
 func TestListVolumeName(t *testing.T) {
 	// TODO
+	driverName := "fake_driver4"
+	dir, err := ioutil.TempDir("", "TestGetVolume")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	core, err := createVolumeCore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	driver.Register(driver.NewFakeDriver(driverName))
+	defer driver.Unregister(driverName)
+
+	var i int64
+	volmap := map[string]*types.Volume{}
+	for i = 0; i < 6; i++ {
+		volName := strconv.FormatInt(i, 10)
+		volid := types.VolumeID{Name: volName, Driver: driverName}
+		v, err := core.CreateVolume(volid)
+		if err != nil {
+			t.Fatalf("create volume error: %v", err)
+		}
+		volmap[volName] = v
+	}
+
+	volarray, err := core.ListVolumes(nil)
+	for k := 0; k < len(volarray); k++ {
+		vol := volarray[k]
+		_, found := volmap[vol.Name]
+		if found == false {
+			t.Fatalf("list volumes %v not found", vol)
+		}
+	}
+	//add unit test for listVolumeName
+	var volNames []string
+        volNames, err = core.ListVolumeName(nil)
+	if err != nil{
+		t.Fatalf("list volume name function failed!")
+	}
+	for j:= 0; j < len(volNames); j++ {
+		_, found := volmap[volNames[j]]
+		if found == false {
+			t.Fatalf("list volumes name %s not found", volNames[j])
+		}	
+	}
+
 }
 
 func TestRemoveVolume(t *testing.T) {
