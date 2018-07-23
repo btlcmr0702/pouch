@@ -270,6 +270,52 @@ func TestRemoveVolume(t *testing.T) {
 
 func TestVolumePath(t *testing.T) {
 	// TODO
+	volName1 := "myVol"
+	driverName1 := "my_fake_driver"
+	volid1 := types.VolumeID{Name: volName1, Driver: driverName1}
+
+	dir, err := ioutil.TempDir("", "TestGetVolume")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	core, err_cvc := createVolumeCore(dir)
+	if err_cvc != nil {
+		t.Fatal(err)
+	}
+        volumePath1, err_vp := core.VolumePath(volid1)
+	if err_vp == nil {
+		t.Fatalf("volume path of volume %v should be nil!", volid1)
+	}
+
+	driver.Register(driver.NewFakeDriver(driverName1))
+	defer driver.Unregister(driverName1)
+
+	v1, err_cv := core.CreateVolume(volid1)
+	if err_cv != nil {
+		t.Fatalf("create volume %v fail, error %v", volid1, err_cv)
+	}
+	if v1.Name != volName1 {
+		t.Fatalf("volume name should be %s not %s", volName1, v1.Name)
+	}
+	if v1.Driver() != driverName1 {
+		t.Fatalf("volume driver should be %s not %s", driverName1, v1.Driver())
+	}
+	_, err_gv := core.GetVolume(volid1)
+	if err_gv != nil {
+		t.Fatalf("get volume %v fail, error %v", volid1, err_gv)
+	}
+
+	volumePath2, err_vp2 := core.VolumePath(volid1)
+	if err_vp2 != nil {
+		t.Fatalf("volume path of volume %v error",volid1)
+	}
+
+	if volumePath1 == volumePath2{
+		t.Fatalf("volume path %s should not be nil", volumePath2)
+	}
+
 }
 
 func TestAttachVolume(t *testing.T) {
